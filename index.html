@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>JKT48 Senbatsu Maker - Original Ratio Edition</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap"
+        rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'jkt-red': '#E81C24',
+                        'jkt-dark': '#141414',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: linear-gradient(to bottom, #ffffff, #fff5f5);
+            color: #141414;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* --- STYLE ASLI (STEP 1 & 2) --- */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.55);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(232, 28, 36, 0.10);
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.05);
+        }
+
+        .step-transition {
+            animation: slideUp 0.55s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .member-card {
+            transition: all 0.25s ease;
+            border-radius: 18px;
+            overflow: hidden;
+            background: white;
+            border: 1px solid rgba(0, 0, 0, 0.06);
+        }
+
+        .member-card.selected {
+            border: 2px solid #E81C24;
+            transform: scale(0.96);
+        }
+
+        .member-card.disabled {
+            filter: grayscale(1) opacity(0.35);
+            pointer-events: none;
+        }
+
+        .count-badge {
+            background: #E81C24;
+            color: white;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 900;
+            font-size: 10px;
+            position: absolute;
+            top: 7px;
+            right: 7px;
+            z-index: 10;
+        }
+
+        /* --- STEP 3 --- */
+        #capture-area {
+            background: white;
+            position: relative;
+            border: 15px solid white;
+        }
+
+        .stage-gradient {
+            background: radial-gradient(circle at center, #ffffff 0%, #fffafa 100%);
+            border-radius: 2.5rem;
+            padding: 24px 12px;
+            border: 1px solid rgba(232, 28, 36, 0.08);
+            position: relative;
+        }
+
+        #step-3:not(.hidden) {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        #pyramid-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .pyramid-row {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            width: 100%;
+        }
+
+        .member-slot {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .img-portrait {
+            width: clamp(60px, 16vw, 85px);
+            aspect-ratio: 4 / 5.5;
+            object-fit: cover;
+            border-radius: 16px;
+            border: 2px solid rgba(232, 28, 36, 0.25);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+            background: #f9f9f9;
+        }
+
+        .img-portrait-center {
+            width: clamp(90px, 22vw, 120px);
+            aspect-ratio: 4 / 5.5;
+            object-fit: cover;
+            border-radius: 18px;
+            border: 3px solid #E81C24;
+            box-shadow: 0 0 20px rgba(232, 28, 36, 0.18);
+            background: #f9f9f9;
+        }
+
+        .member-name-s3 {
+            margin-top: 7px;
+            font-size: clamp(9px, 2.6vw, 11px);
+            font-weight: 800;
+            color: #141414;
+            max-width: clamp(65px, 18vw, 95px);
+            text-align: center;
+            line-height: 1.05;
+            word-break: break-word;
+        }
+
+        .member-name-center {
+            margin-top: 9px;
+            font-size: clamp(11px, 3vw, 13px);
+            font-weight: 900;
+            color: #141414;
+            max-width: clamp(90px, 26vw, 140px);
+            text-align: center;
+            line-height: 1.05;
+            word-break: break-word;
+        }
+
+        .red-divider {
+            height: 1.5px;
+            background: linear-gradient(90deg, transparent, #E81C24, transparent);
+            width: 50%;
+            margin: 16px auto;
+            opacity: 0.3;
+        }
+
+        .number-badge {
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: #E81C24;
+            color: white;
+            font-size: 10px;
+            font-weight: 900;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
+            z-index: 20;
+        }
+
+        /* TOGGLE BUTTON */
+        .toggle-wrap {
+            position: absolute;
+            top: 18px;
+            right: 18px;
+            z-index: 60;
+            display: flex;
+            gap: 8px;
+            padding: 6px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(0, 0, 0, 0.06);
+            box-shadow: 0 8px 22px rgba(0, 0, 0, 0.08);
+        }
+
+        .toggle-btn {
+            padding: 8px 14px;
+            border-radius: 999px;
+            font-size: 10px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            transition: 0.2s ease;
+            user-select: none;
+        }
+
+        .toggle-btn.active {
+            background: #E81C24;
+            color: white;
+            box-shadow: 0 8px 18px rgba(232, 28, 36, 0.20);
+        }
+
+        .toggle-btn.inactive {
+            background: transparent;
+            color: #888;
+        }
+
+        .toggle-btn:hover {
+            transform: translateY(-1px);
+        }
+
+        /* MOBILE STEP 3 FIX */
+        @media (max-width: 640px) {
+            .stage-gradient {
+                padding-top: 75px;
+            }
+
+            .toggle-wrap {
+                top: 16px;
+                right: 50%;
+                transform: translateX(50%);
+            }
+
+            .pyramid-row {
+                gap: 10px;
+            }
+
+            .img-portrait {
+                width: 72px;
+            }
+
+            .img-portrait-center {
+                width: 100px;
+            }
+        }
+    </style>
+</head>
+
+<body class="p-3 sm:p-4">
+
+    <section id="step-1"
+        class="w-full text-center step-transition relative overflow-hidden flex flex-col justify-center"
+        style="min-height:100vh;">
+        <div class="relative z-10 w-full max-w-lg mx-auto px-3 sm:px-4">
+            <div class="flex justify-center mb-5">
+                <div class="glass-card px-4 py-2 rounded-2xl flex items-center gap-3">
+                    <div
+                        class="w-9 h-9 rounded-xl bg-white flex items-center justify-center overflow-hidden border border-red-100">
+                        <img src="asset/jkt48.png" class="w-full h-full object-contain"
+                            onerror="this.style.display='none';">
+                    </div>
+                    <div class="text-left leading-tight">
+                        <p class="text-[9px] font-extrabold uppercase tracking-[0.18em] text-gray-400">Official Tool</p>
+                        <p class="text-[13px] font-black text-jkt-dark">Senbatsu Maker</p>
+                    </div>
+                </div>
+            </div>
+            <div
+                class="inline-block px-3 py-1 rounded-full bg-red-50 text-jkt-red font-black text-[10px] tracking-[0.22em] uppercase mb-5">
+                Future Gen Senbatsu</div>
+            <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight mb-3 leading-tight">JKT48<span
+                    class="text-jkt-red">.</span>Maker</h1>
+            <p class="text-gray-500 text-[12px] sm:text-sm mb-8 font-medium max-w-sm mx-auto leading-relaxed">Susun
+                formasi panggung masa depan dengan tampilan modern, minimalis, dan siap di-download.</p>
+            <div class="glass-card p-5 sm:p-6 rounded-[2.2rem] w-full">
+                <h3 class="text-[10px] font-black text-gray-400 uppercase tracking-[0.22em] mb-5">Slot Anggota</h3>
+                <div class="flex justify-center items-center gap-5 mb-7">
+                    <button onclick="changeSize(-1)"
+                        class="w-11 h-11 rounded-2xl bg-white border border-gray-200 flex items-center justify-center text-lg font-black hover:border-jkt-red hover:text-jkt-red shadow-sm">-</button>
+                    <span id="senbatsu-count" class="text-4xl font-black text-jkt-dark w-16">16</span>
+                    <button onclick="changeSize(1)"
+                        class="w-11 h-11 rounded-2xl bg-white border border-gray-200 flex items-center justify-center text-lg font-black hover:border-jkt-red hover:text-jkt-red shadow-sm">+</button>
+                </div>
+                <button onclick="goToStep2()"
+                    class="w-full bg-jkt-red text-white py-3.5 rounded-[1.8rem] font-extrabold text-sm shadow-xl shadow-red-200 hover:brightness-110">Mulai
+                    Menyusun</button>
+            </div>
+        </div>
+    </section>
+
+    <section id="step-2" class="hidden max-w-7xl mx-auto pb-36 step-transition">
+        <header class="glass-card sticky top-3 z-50 p-3 rounded-3xl flex justify-between items-center gap-4 mb-7">
+            <button onclick="location.reload()"
+                class="text-[11px] font-black text-gray-400 hover:text-jkt-red transition-colors px-2">BACK</button>
+            <div class="text-center leading-tight">
+                <h2 class="font-extrabold text-[12px] sm:text-sm" id="selection-title">Lineup Selection</h2>
+                <p class="text-[8px] text-gray-400 font-black uppercase tracking-[0.15em]">Urutan #1 adalah Center</p>
+            </div>
+            <div id="counter"
+                class="bg-jkt-dark text-white px-4 py-2 rounded-full font-black text-[11px] tracking-tight">0 / 16</div>
+        </header>
+        <div id="member-list" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2.5"></div>
+        <div class="fixed bottom-4 left-1/2 -translate-x-1/2 w-[94%] max-w-4xl z-50">
+            <div class="glass-card p-2.5 rounded-[2rem] flex flex-col sm:flex-row gap-2.5 shadow-xl">
+                <input type="text" id="user-name-input" placeholder="Your Name"
+                    class="flex-1 bg-white border border-gray-100 px-4 py-3 rounded-full outline-none font-bold text-[12px]">
+                <input type="text" id="song-title-input" placeholder="Song Title"
+                    class="flex-1 bg-white border border-gray-100 px-4 py-3 rounded-full outline-none font-bold text-[12px]">
+                <button onclick="goToStep3()" id="btn-view" disabled
+                    class="bg-gray-200 text-gray-400 px-6 py-3 rounded-full font-black uppercase tracking-[0.18em] text-[10px]">Generate</button>
+            </div>
+        </div>
+    </section>
+
+    <section id="step-3" class="hidden max-w-4xl mx-auto py-6 step-transition text-center">
+        <div id="capture-area" class="rounded-[2.5rem] shadow-2xl mb-8">
+            <div class="stage-gradient">
+
+                <div class="toggle-wrap">
+                    <button id="btn-zigzag" class="toggle-btn active" onclick="setLayoutMode('zigzag')">Zigzag</button>
+                    <button id="btn-normal" class="toggle-btn inactive" onclick="setLayoutMode('normal')">Normal</button>
+                </div>
+
+                <div class="mb-8">
+                    <img src="asset/jkt48.png" class="h-10 mx-auto mb-4" onerror="this.style.display='none'">
+                    <h2 id="res-song" class="text-2xl font-black text-jkt-dark tracking-tighter uppercase italic">SONG
+                        TITLE</h2>
+                    <div class="red-divider"></div>
+                </div>
+
+                <div id="pyramid-container" class="flex flex-col items-center"></div>
+
+                <div class="red-divider"></div>
+
+                <div class="flex justify-between items-end px-8 mt-6">
+                    <div class="text-left">
+                        <p class="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1">Created By</p>
+                        <p id="res-name" class="text-xs font-black text-jkt-red">YOUR NAME</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-[8px] font-black text-gray-300">DREAM SENBATSU MAKER 2026</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex flex-col sm:flex-row justify-center gap-3 px-4">
+            <button onclick="downloadImage()" id="btn-download"
+                class="bg-jkt-red text-white px-10 py-4 rounded-full font-black text-xs shadow-xl shadow-red-200 uppercase">Download
+                Artwork</button>
+            <button onclick="location.reload()"
+                class="bg-white border border-gray-200 text-gray-400 px-10 py-4 rounded-full font-black text-xs uppercase">Reset</button>
+        </div>
+    </section>
+
+    <script>
+        let senbatsuSize = 16;
+        let selectedMembers = [];
+        let layoutMode = "zigzag";
+
+        const memberNames = [
+            "Abigail Rachel", "Adeline Wijaya", "Afera Thalia", "Alya Amanda", "Angelina Christy", "Anindya Ramadhani",
+            "Astrella Virgiananda", "Aulia Riza", "Aurellia", "Aurhel Alana", "Bong Aprilli", "Carissa Dini",
+            "Catherina Vallencia", "Cathleen Nixie", "Celline Thefani", "Chelsea Davina", "Christabella Bonita",
+            "Cornelia Vanisa", "Cynthia Yaputera", "Dena Natalia", "Desy Natalia", "Fahira Putri", "Fatimah Azzahra",
+            "Febriola Sinambela", "Feni Fitriyanti", "Fiony Alveria", "Freya Jayawardana", "Fritzy Rosmerian",
+            "Gabriela Abigail", "Gendis Mayrannisa", "Gita Sekar Andarini", "Grace Octaviani", "Greesella Adhalia",
+            "Hagia Sopia", "Heidi Suyangga", "Helisma Putri", "Hillary Abigail", "Humaira Ramadhani", "Indah Cahya",
+            "Jacqueline Immanuela", "Jazzlyn Trisha", "Jemima Evodie", "Jessica Chandra", "Jesslyn Elly",
+            "Kathrina Irene", "Lulu Salsabila", "Marsha Lenathea", "Maxine Faye Lee",
+            "Michelle Alexandra", "Michelle Levia", "Mikaela Kusjanto", "Mutiara Azzahra", "Nayla Suji", "Nina Tutachia",
+            "Nur Intan", "Oline Manuel", "Putry Jazyta", "Raisha Syifa", "Ralyne Van Irwan",
+            "Ribka Budiman", "Shabilqis Naila", "Sona Kalyana", "Victoria Kimberly"
+        ].sort();
+
+        function changeSize(val) {
+            senbatsuSize = Math.max(1, Math.min(memberNames.length, senbatsuSize + val));
+            document.getElementById('senbatsu-count').innerText = senbatsuSize;
+            updateCounter();
+        }
+
+        function goToStep2() {
+            document.getElementById('step-1').style.display = 'none';
+            document.getElementById('step-2').classList.remove('hidden');
+            renderMembers();
+        }
+
+        function renderMembers() {
+            const container = document.getElementById('member-list');
+            container.innerHTML = memberNames.map(name => {
+                const idx = selectedMembers.indexOf(name);
+                const isSelected = idx > -1;
+                const isDisabled = selectedMembers.length >= senbatsuSize && !isSelected;
+                return `
+                    <div class="member-card cursor-pointer relative ${isSelected ? 'selected' : ''} ${isDisabled ? 'disabled' : ''}" onclick="toggleMember('${name}')">
+                        ${isSelected ? `<div class="count-badge">${idx + 1}</div>` : ''}
+                        <div class="aspect-[4/5] bg-gray-100 overflow-hidden">
+                            <img src="asset/${name.toLowerCase().replace(/ /g, '_')}.jpg" class="w-full h-full object-cover" onerror="this.src='https://via.placeholder.com/200x250?text=${name.split(' ')[0]}'">
+                        </div>
+                        <div class="p-2 text-center text-[9px] font-bold uppercase truncate">${name}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function toggleMember(name) {
+            const idx = selectedMembers.indexOf(name);
+            if (idx > -1) selectedMembers.splice(idx, 1);
+            else if (selectedMembers.length < senbatsuSize) selectedMembers.push(name);
+            renderMembers();
+            updateCounter();
+        }
+
+        function updateCounter() {
+            const el = document.getElementById('counter');
+            const btn = document.getElementById('btn-view');
+            el.innerText = `${selectedMembers.length} / ${senbatsuSize}`;
+            if (selectedMembers.length === senbatsuSize) {
+                btn.disabled = false;
+                btn.className = "bg-jkt-red text-white px-8 py-3 rounded-full font-black uppercase text-[10px] shadow-lg";
+            } else {
+                btn.disabled = true;
+                btn.className = "bg-gray-200 text-gray-400 px-8 py-3 rounded-full font-black uppercase text-[10px]";
+            }
+        }
+
+        function goToStep3() {
+            document.getElementById('step-2').classList.add('hidden');
+            document.getElementById('step-3').classList.remove('hidden');
+            document.getElementById('res-name').innerText = document.getElementById('user-name-input').value || "ANONYMOUS";
+            document.getElementById('res-song').innerText = document.getElementById('song-title-input').value || "JKT48 NEW SINGLE";
+            buildPyramid();
+        }
+
+        function setLayoutMode(mode) {
+            layoutMode = mode;
+
+            const btnZigzag = document.getElementById("btn-zigzag");
+            const btnNormal = document.getElementById("btn-normal");
+
+            if (layoutMode === "zigzag") {
+                btnZigzag.className = "toggle-btn active";
+                btnNormal.className = "toggle-btn inactive";
+            } else {
+                btnZigzag.className = "toggle-btn inactive";
+                btnNormal.className = "toggle-btn active";
+            }
+
+            buildPyramid();
+        }
+
+        function buildPyramid() {
+            const container = document.getElementById('pyramid-container');
+            container.innerHTML = '';
+
+            let membersCopy = [...selectedMembers];
+            const centerName = membersCopy.shift();
+
+            function getOriginalNumber(name) {
+                return selectedMembers.indexOf(name) + 1;
+            }
+
+            if (centerName) {
+                const centerRow = document.createElement('div');
+                centerRow.className = 'pyramid-row';
+
+                centerRow.innerHTML = `
+                    <div class="member-slot">
+                        <div class="relative">
+                            <div class="number-badge">${getOriginalNumber(centerName)}</div>
+                            <img src="asset/${centerName.toLowerCase().replace(/ /g, '_')}.jpg" class="img-portrait-center"
+                                onerror="this.src='https://via.placeholder.com/200x250?text=${centerName.split(' ')[0]}'">
+                        </div>
+                        <span class="member-name-center">${centerName}</span>
+                    </div>
+                `;
+
+                container.appendChild(centerRow);
+            }
+
+            const isMobile = window.innerWidth <= 640;
+
+            /* =======================
+               MOBILE: MAX 4 PER ROW
+            ======================= */
+            if (isMobile) {
+                const maxPerRow = 4;
+
+                function zigzagOrderMobile(size) {
+                    let positions = [];
+                    let left = 0;
+                    let right = size - 1;
+
+                    while (positions.length < size) {
+                        if (left <= right) {
+                            positions.push(left);
+                            left++;
+                        }
+                        if (positions.length < size && right >= left) {
+                            positions.push(right);
+                            right--;
+                        }
+                    }
+
+                    return positions;
+                }
+
+                while (membersCopy.length > 0) {
+                    const rowDiv = document.createElement('div');
+                    rowDiv.className = 'pyramid-row';
+
+                    const rowMembers = membersCopy.splice(0, maxPerRow);
+
+                    if (layoutMode === "normal") {
+                        rowMembers.forEach(name => {
+                            rowDiv.innerHTML += `
+                                <div class="member-slot">
+                                    <div class="relative">
+                                        <div class="number-badge">${getOriginalNumber(name)}</div>
+                                        <img src="asset/${name.toLowerCase().replace(/ /g, '_')}.jpg" class="img-portrait"
+                                            onerror="this.src='https://via.placeholder.com/150x200?text=${name.split(' ')[0]}'">
+                                    </div>
+                                    <span class="member-name-s3">${name}</span>
+                                </div>
+                            `;
+                        });
+
+                        container.appendChild(rowDiv);
+                        continue;
+                    }
+
+                    let slots = new Array(rowMembers.length).fill(null);
+                    const order = zigzagOrderMobile(rowMembers.length);
+
+                    rowMembers.forEach((name, idx) => {
+                        slots[order[idx]] = name;
+                    });
+
+                    slots.forEach(name => {
+                        rowDiv.innerHTML += `
+                            <div class="member-slot">
+                                <div class="relative">
+                                    <div class="number-badge">${getOriginalNumber(name)}</div>
+                                    <img src="asset/${name.toLowerCase().replace(/ /g, '_')}.jpg" class="img-portrait"
+                                        onerror="this.src='https://via.placeholder.com/150x200?text=${name.split(' ')[0]}'">
+                                </div>
+                                <span class="member-name-s3">${name}</span>
+                            </div>
+                        `;
+                    });
+
+                    container.appendChild(rowDiv);
+                }
+
+                return;
+            }
+
+            /* =======================
+               DESKTOP: PYRAMID STRICT
+            ======================= */
+            let remaining = membersCopy.length;
+            let rowSizes = [];
+
+            const relaxRule = remaining > 24;
+
+            let rowsCount = Math.ceil(remaining / 6);
+            if (rowsCount < 2) rowsCount = 2;
+
+            for (let i = 1; i <= rowsCount; i++) {
+                rowSizes.push(i);
+            }
+
+            while (rowSizes.reduce((a, b) => a + b, 0) < remaining) {
+                for (let i = rowSizes.length - 1; i >= 0; i--) {
+                    if (rowSizes.reduce((a, b) => a + b, 0) >= remaining) break;
+                    rowSizes[i]++;
+                }
+            }
+
+            while (rowSizes.reduce((a, b) => a + b, 0) > remaining) {
+                for (let i = 0; i < rowSizes.length; i++) {
+                    if (rowSizes.reduce((a, b) => a + b, 0) <= remaining) break;
+                    if (rowSizes[i] > 1) rowSizes[i]--;
+                }
+            }
+
+            for (let i = 1; i < rowSizes.length; i++) {
+                if (rowSizes[i] < rowSizes[i - 1] && !relaxRule) {
+                    rowSizes[i] = rowSizes[i - 1];
+                }
+            }
+
+            let total = rowSizes.reduce((a, b) => a + b, 0);
+
+            while (total < remaining) {
+                rowSizes[rowSizes.length - 1]++;
+                total++;
+            }
+
+            while (total > remaining) {
+                for (let i = 0; i < rowSizes.length; i++) {
+                    if (total <= remaining) break;
+                    if (rowSizes[i] > 1) {
+                        rowSizes[i]--;
+                        total--;
+                    }
+                }
+            }
+
+            function zigzagOrder(size) {
+                let positions = [];
+                let left = 0;
+                let right = size - 1;
+
+                while (positions.length < size) {
+                    if (left <= right) {
+                        positions.push(left);
+                        left++;
+                    }
+                    if (positions.length < size && right >= left) {
+                        positions.push(right);
+                        right--;
+                    }
+                }
+
+                return positions;
+            }
+
+            rowSizes.forEach(size => {
+                const rowDiv = document.createElement('div');
+                rowDiv.className = 'pyramid-row';
+
+                const rowMembers = membersCopy.splice(0, size);
+
+                if (layoutMode === "normal") {
+                    rowMembers.forEach(name => {
+                        rowDiv.innerHTML += `
+                            <div class="member-slot">
+                                <div class="relative">
+                                    <div class="number-badge">${getOriginalNumber(name)}</div>
+                                    <img src="asset/${name.toLowerCase().replace(/ /g, '_')}.jpg" class="img-portrait"
+                                        onerror="this.src='https://via.placeholder.com/150x200?text=${name.split(' ')[0]}'">
+                                </div>
+                                <span class="member-name-s3">${name}</span>
+                            </div>
+                        `;
+                    });
+
+                    container.appendChild(rowDiv);
+                    return;
+                }
+
+                let slots = new Array(size).fill(null);
+                const order = zigzagOrder(size);
+
+                rowMembers.forEach((name, idx) => {
+                    slots[order[idx]] = name;
+                });
+
+                slots.forEach(name => {
+                    rowDiv.innerHTML += `
+                        <div class="member-slot">
+                            <div class="relative">
+                                <div class="number-badge">${getOriginalNumber(name)}</div>
+                                <img src="asset/${name.toLowerCase().replace(/ /g, '_')}.jpg" class="img-portrait"
+                                    onerror="this.src='https://via.placeholder.com/150x200?text=${name.split(' ')[0]}'">
+                            </div>
+                            <span class="member-name-s3">${name}</span>
+                        </div>
+                    `;
+                });
+
+                container.appendChild(rowDiv);
+            });
+        }
+
+        window.addEventListener("resize", () => {
+            if (!document.getElementById("step-3").classList.contains("hidden")) {
+                buildPyramid();
+            }
+        });
+
+        function downloadImage() {
+            const btn = document.getElementById('btn-download');
+            btn.innerText = "GENERATING...";
+            html2canvas(document.querySelector("#capture-area"), {
+                scale: 3,
+                useCORS: true,
+                backgroundColor: "#ffffff"
+            }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = `JKT48-Senbatsu-${Date.now()}.png`;
+                link.href = canvas.toDataURL("image/png");
+                link.click();
+                btn.innerText = "DOWNLOAD ARTWORK";
+            });
+        }
+    </script>
+</body>
+
+</html>
