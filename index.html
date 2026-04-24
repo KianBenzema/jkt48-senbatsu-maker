@@ -269,6 +269,16 @@
                 width: 100px;
             }
         }
+
+        /* FIX EXPORT SIZE */
+        .export-mode #capture-area {
+            width: 900px !important;
+            margin: 0 auto !important;
+        }
+
+        .export-mode .stage-gradient {
+            padding-top: 24px !important;
+        }
     </style>
 </head>
 
@@ -421,7 +431,8 @@
                     <div class="member-card cursor-pointer relative ${isSelected ? 'selected' : ''} ${isDisabled ? 'disabled' : ''}" onclick="toggleMember('${name}')">
                         ${isSelected ? `<div class="count-badge">${idx + 1}</div>` : ''}
                         <div class="aspect-[4/5] bg-gray-100 overflow-hidden">
-                            <img src="asset/${name.toLowerCase().replace(/ /g, '_')}.jpg" class="w-full h-full object-cover" onerror="this.src='https://via.placeholder.com/200x250?text=${name.split(' ')[0]}'">
+                            <img src="asset/${name.toLowerCase().replace(/ /g, '_')}.jpg" class="w-full h-full object-cover"
+                                onerror="this.onerror=null; this.src='asset/${name.toLowerCase().replace(/ /g, '_')}.png';">
                         </div>
                         <div class="p-2 text-center text-[9px] font-bold uppercase truncate">${name}</div>
                     </div>
@@ -495,7 +506,7 @@
                         <div class="relative">
                             <div class="number-badge">${getOriginalNumber(centerName)}</div>
                             <img src="asset/${centerName.toLowerCase().replace(/ /g, '_')}.jpg" class="img-portrait-center"
-                                onerror="this.src='https://via.placeholder.com/200x250?text=${centerName.split(' ')[0]}'">
+                                onerror="this.onerror=null; this.src='asset/${centerName.toLowerCase().replace(/ /g, '_')}.png';">
                         </div>
                         <span class="member-name-center">${centerName}</span>
                     </div>
@@ -507,10 +518,17 @@
             const isMobile = window.innerWidth <= 640;
 
             /* =======================
-               MOBILE: MAX 4 PER ROW
+               MOBILE: MAX ROW CONTROL
             ======================= */
             if (isMobile) {
-                const maxPerRow = 4;
+
+                let maxPerRow = 4;
+
+                if (window.innerWidth <= 375) {
+                    maxPerRow = 3;
+                } else if (window.innerWidth <= 425) {
+                    maxPerRow = 4;
+                }
 
                 function zigzagOrderMobile(size) {
                     let positions = [];
@@ -544,7 +562,7 @@
                                     <div class="relative">
                                         <div class="number-badge">${getOriginalNumber(name)}</div>
                                         <img src="asset/${name.toLowerCase().replace(/ /g, '_')}.jpg" class="img-portrait"
-                                            onerror="this.src='https://via.placeholder.com/150x200?text=${name.split(' ')[0]}'">
+                                            onerror="this.onerror=null; this.src='asset/${name.toLowerCase().replace(/ /g, '_')}.png';">
                                     </div>
                                     <span class="member-name-s3">${name}</span>
                                 </div>
@@ -568,7 +586,7 @@
                                 <div class="relative">
                                     <div class="number-badge">${getOriginalNumber(name)}</div>
                                     <img src="asset/${name.toLowerCase().replace(/ /g, '_')}.jpg" class="img-portrait"
-                                        onerror="this.src='https://via.placeholder.com/150x200?text=${name.split(' ')[0]}'">
+                                        onerror="this.onerror=null; this.src='asset/${name.toLowerCase().replace(/ /g, '_')}.png';">
                                 </div>
                                 <span class="member-name-s3">${name}</span>
                             </div>
@@ -665,7 +683,7 @@
                                 <div class="relative">
                                     <div class="number-badge">${getOriginalNumber(name)}</div>
                                     <img src="asset/${name.toLowerCase().replace(/ /g, '_')}.jpg" class="img-portrait"
-                                        onerror="this.src='https://via.placeholder.com/150x200?text=${name.split(' ')[0]}'">
+                                        onerror="this.onerror=null; this.src='asset/${name.toLowerCase().replace(/ /g, '_')}.png';">
                                 </div>
                                 <span class="member-name-s3">${name}</span>
                             </div>
@@ -689,7 +707,7 @@
                             <div class="relative">
                                 <div class="number-badge">${getOriginalNumber(name)}</div>
                                 <img src="asset/${name.toLowerCase().replace(/ /g, '_')}.jpg" class="img-portrait"
-                                    onerror="this.src='https://via.placeholder.com/150x200?text=${name.split(' ')[0]}'">
+                                    onerror="this.onerror=null; this.src='asset/${name.toLowerCase().replace(/ /g, '_')}.png';">
                             </div>
                             <span class="member-name-s3">${name}</span>
                         </div>
@@ -709,17 +727,27 @@
         function downloadImage() {
             const btn = document.getElementById('btn-download');
             btn.innerText = "GENERATING...";
-            html2canvas(document.querySelector("#capture-area"), {
-                scale: 3,
-                useCORS: true,
-                backgroundColor: "#ffffff"
-            }).then(canvas => {
-                const link = document.createElement('a');
-                link.download = `JKT48-Senbatsu-${Date.now()}.png`;
-                link.href = canvas.toDataURL("image/png");
-                link.click();
-                btn.innerText = "DOWNLOAD ARTWORK";
-            });
+
+            document.body.classList.add("export-mode");
+
+            setTimeout(() => {
+                html2canvas(document.querySelector("#capture-area"), {
+                    scale: 3,
+                    useCORS: true,
+                    backgroundColor: "#ffffff",
+                    width: document.querySelector("#capture-area").offsetWidth,
+                    windowWidth: document.querySelector("#capture-area").scrollWidth
+                }).then(canvas => {
+                    const link = document.createElement('a');
+                    link.download = `JKT48-Senbatsu-${Date.now()}.png`;
+                    link.href = canvas.toDataURL("image/png");
+                    link.click();
+
+                    document.body.classList.remove("export-mode");
+
+                    btn.innerText = "DOWNLOAD ARTWORK";
+                });
+            }, 200);
         }
     </script>
 </body>
