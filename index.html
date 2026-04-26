@@ -508,7 +508,7 @@
             }
 
             // ==========================
-            // RENDER CENTER (UKURAN DISAMAIN)
+            // RENDER CENTER (SELALU SENDIRI)
             // ==========================
             if (centerName) {
                 const centerRow = document.createElement('div');
@@ -519,10 +519,10 @@
                 <div class="relative">
                     <div class="number-badge">${getOriginalNumber(centerName)}</div>
                     <img src="asset/${centerName.toLowerCase().replace(/ /g, '_')}.jpg"
-                        class="img-portrait"
+                        class="img-portrait-center"
                         onerror="this.onerror=null; this.src='asset/${centerName.toLowerCase().replace(/ /g, '_')}.png';">
                 </div>
-                <span class="member-name-s3">${centerName}</span>
+                <span class="member-name-center">${centerName}</span>
             </div>
         `;
 
@@ -618,6 +618,7 @@
 
             // ==========================
             // DESKTOP MODE (START FROM 2)
+            // contoh 12: 1 / 2 / 3 / 6
             // ==========================
             let remaining = membersCopy.length;
             let rowSizes = [];
