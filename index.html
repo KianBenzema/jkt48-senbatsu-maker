@@ -505,8 +505,21 @@
                 return selectedMembers.indexOf(name) + 1;
             }
 
+            function zigzagOrder(size) {
+                let positions = [];
+                let left = 0;
+                let right = size - 1;
+
+                while (positions.length < size) {
+                    if (left <= right) positions.push(left++);
+                    if (positions.length < size && right >= left) positions.push(right--);
+                }
+
+                return positions;
+            }
+
             // ==========================
-            // RENDER CENTER (BESAR)
+            // CENTER (BESAR)
             // ==========================
             if (centerName) {
                 const centerRow = document.createElement('div');
@@ -538,25 +551,6 @@
                     maxPerRow = 3;
                 } else if (window.innerWidth <= 425) {
                     maxPerRow = 4;
-                }
-
-                function zigzagOrder(size) {
-                    let positions = [];
-                    let left = 0;
-                    let right = size - 1;
-
-                    while (positions.length < size) {
-                        if (left <= right) {
-                            positions.push(left);
-                            left++;
-                        }
-                        if (positions.length < size && right >= left) {
-                            positions.push(right);
-                            right--;
-                        }
-                    }
-
-                    return positions;
                 }
 
                 while (membersCopy.length > 0) {
@@ -610,92 +604,51 @@
             }
 
             // ==========================
-            // DESKTOP MODE (MAX 7 PER ROW)
-            // RULE: bawah tidak boleh lebih kecil dari atas
+            // DESKTOP MODE (CUSTOM SYSTEM)
+            // 12 => 1/2/4/5
+            // 24 => 1/2/3/5/6/7
+            // MAX 7 PER ROW
             // ==========================
             const maxPerRow = 7;
+            const totalSenbatsu = selectedMembers.length;
             let remaining = membersCopy.length;
 
-            let rowSizes = [];
-            let nextSize = 2;
+            let rows = [];
 
-            // buat row naik dari 2 sampai max 7
-            while (remaining > 0) {
-                let size = Math.min(nextSize, maxPerRow);
+            if (totalSenbatsu === 12) {
+                rows = [2, 4, 5];
+            } else if (totalSenbatsu === 24) {
+                rows = [2, 3, 5, 6, 7];
+            } else {
+                // AUTO UNTUK 25+
+                rows = [2, 3, 4, 5, 6, 7];
+                let sum = rows.reduce((a, b) => a + b, 0);
 
-                if (remaining <= size) {
-                    rowSizes.push(remaining);
-                    remaining = 0;
-                    break;
+                while (sum < remaining) {
+                    rows.push(7);
+                    sum += 7;
                 }
 
-                rowSizes.push(size);
-                remaining -= size;
-
-                if (nextSize < maxPerRow) nextSize++;
-            }
-
-            // pastikan row terakhir tidak lebih kecil dari sebelumnya
-            // kalau lebih kecil, gabung ke row sebelumnya
-            while (rowSizes.length >= 2) {
-                const last = rowSizes[rowSizes.length - 1];
-                const prev = rowSizes[rowSizes.length - 2];
-
-                if (last < prev) {
-                    rowSizes[rowSizes.length - 2] += last;
-                    rowSizes.pop();
-
-                    // kalau row sebelumnya jadi lebih dari 7, pecah lagi
-                    if (rowSizes[rowSizes.length - 1] > maxPerRow) {
-                        let overflow = rowSizes[rowSizes.length - 1] - maxPerRow;
-                        rowSizes[rowSizes.length - 1] = maxPerRow;
-                        rowSizes.push(overflow);
-                    }
-                } else {
-                    break;
-                }
-            }
-
-            // jika masih ada row yang >7 (karena overflow), pecah jadi beberapa row max 7
-            let finalRows = [];
-            rowSizes.forEach(sz => {
-                while (sz > maxPerRow) {
-                    finalRows.push(maxPerRow);
-                    sz -= maxPerRow;
-                }
-                if (sz > 0) finalRows.push(sz);
-            });
-
-            // rapihin lagi biar non-decreasing
-            for (let i = 1; i < finalRows.length; i++) {
-                if (finalRows[i] < finalRows[i - 1]) {
-                    finalRows[i] += finalRows[i - 1];
-                    finalRows.splice(i - 1, 1);
-                    i = 0;
-                }
-            }
-
-            function zigzagOrder(size) {
-                let positions = [];
-                let left = 0;
-                let right = size - 1;
-
-                while (positions.length < size) {
-                    if (left <= right) {
-                        positions.push(left);
-                        left++;
-                    }
-                    if (positions.length < size && right >= left) {
-                        positions.push(right);
-                        right--;
+                while (sum > remaining) {
+                    for (let i = 0; i < rows.length && sum > remaining; i++) {
+                        if (rows[i] > 2) {
+                            rows[i]--;
+                            sum--;
+                        }
                     }
                 }
 
-                return positions;
+                for (let i = 1; i < rows.length; i++) {
+                    if (rows[i] < rows[i - 1]) {
+                        rows[i] = rows[i - 1];
+                    }
+                }
+
+                rows = rows.map(x => Math.min(x, maxPerRow));
             }
 
-            // render desktop
-            finalRows.forEach(size => {
+            // render desktop rows
+            rows.forEach(size => {
                 const rowDiv = document.createElement('div');
                 rowDiv.className = 'pyramid-row';
 
