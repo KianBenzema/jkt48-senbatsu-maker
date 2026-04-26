@@ -125,8 +125,15 @@
             display: flex;
             justify-content: center;
             gap: 12px;
-            flex-wrap: wrap;
-            width: 100%;
+            flex-wrap: nowrap;
+            width: auto;
+        }
+
+        @media (max-width: 640px) {
+            .pyramid-row {
+                flex-wrap: wrap;
+                width: 100%;
+            }
         }
 
         .member-slot {
@@ -354,7 +361,8 @@
 
                 <div class="toggle-wrap">
                     <button id="btn-zigzag" class="toggle-btn active" onclick="setLayoutMode('zigzag')">Zigzag</button>
-                    <button id="btn-normal" class="toggle-btn inactive" onclick="setLayoutMode('normal')">Normal</button>
+                    <button id="btn-normal" class="toggle-btn inactive"
+                        onclick="setLayoutMode('normal')">Normal</button>
                 </div>
 
                 <div class="mb-8">
@@ -491,37 +499,42 @@
             container.innerHTML = '';
 
             let membersCopy = [...selectedMembers];
+
+            // center selalu urutan #1
             const centerName = membersCopy.shift();
 
             function getOriginalNumber(name) {
                 return selectedMembers.indexOf(name) + 1;
             }
 
+            // ==========================
+            // RENDER CENTER (UKURAN DISAMAIN)
+            // ==========================
             if (centerName) {
                 const centerRow = document.createElement('div');
                 centerRow.className = 'pyramid-row';
 
                 centerRow.innerHTML = `
-                    <div class="member-slot">
-                        <div class="relative">
-                            <div class="number-badge">${getOriginalNumber(centerName)}</div>
-                            <img src="asset/${centerName.toLowerCase().replace(/ /g, '_')}.jpg" class="img-portrait-center"
-                                onerror="this.onerror=null; this.src='asset/${centerName.toLowerCase().replace(/ /g, '_')}.png';">
-                        </div>
-                        <span class="member-name-center">${centerName}</span>
-                    </div>
-                `;
+            <div class="member-slot">
+                <div class="relative">
+                    <div class="number-badge">${getOriginalNumber(centerName)}</div>
+                    <img src="asset/${centerName.toLowerCase().replace(/ /g, '_')}.jpg"
+                        class="img-portrait"
+                        onerror="this.onerror=null; this.src='asset/${centerName.toLowerCase().replace(/ /g, '_')}.png';">
+                </div>
+                <span class="member-name-s3">${centerName}</span>
+            </div>
+        `;
 
                 container.appendChild(centerRow);
             }
 
             const isMobile = window.innerWidth <= 640;
 
-            /* =======================
-               MOBILE: MAX ROW CONTROL
-            ======================= */
+            // ==========================
+            // MOBILE MODE
+            // ==========================
             if (isMobile) {
-
                 let maxPerRow = 4;
 
                 if (window.innerWidth <= 375) {
@@ -530,7 +543,7 @@
                     maxPerRow = 4;
                 }
 
-                function zigzagOrderMobile(size) {
+                function zigzagOrder(size) {
                     let positions = [];
                     let left = 0;
                     let right = size - 1;
@@ -555,26 +568,29 @@
 
                     const rowMembers = membersCopy.splice(0, maxPerRow);
 
+                    // NORMAL
                     if (layoutMode === "normal") {
                         rowMembers.forEach(name => {
                             rowDiv.innerHTML += `
-                                <div class="member-slot">
-                                    <div class="relative">
-                                        <div class="number-badge">${getOriginalNumber(name)}</div>
-                                        <img src="asset/${name.toLowerCase().replace(/ /g, '_')}.jpg" class="img-portrait"
-                                            onerror="this.onerror=null; this.src='asset/${name.toLowerCase().replace(/ /g, '_')}.png';">
-                                    </div>
-                                    <span class="member-name-s3">${name}</span>
-                                </div>
-                            `;
+                        <div class="member-slot">
+                            <div class="relative">
+                                <div class="number-badge">${getOriginalNumber(name)}</div>
+                                <img src="asset/${name.toLowerCase().replace(/ /g, '_')}.jpg"
+                                    class="img-portrait"
+                                    onerror="this.onerror=null; this.src='asset/${name.toLowerCase().replace(/ /g, '_')}.png';">
+                            </div>
+                            <span class="member-name-s3">${name}</span>
+                        </div>
+                    `;
                         });
 
                         container.appendChild(rowDiv);
                         continue;
                     }
 
+                    // ZIGZAG
                     let slots = new Array(rowMembers.length).fill(null);
-                    const order = zigzagOrderMobile(rowMembers.length);
+                    const order = zigzagOrder(rowMembers.length);
 
                     rowMembers.forEach((name, idx) => {
                         slots[order[idx]] = name;
@@ -582,15 +598,16 @@
 
                     slots.forEach(name => {
                         rowDiv.innerHTML += `
-                            <div class="member-slot">
-                                <div class="relative">
-                                    <div class="number-badge">${getOriginalNumber(name)}</div>
-                                    <img src="asset/${name.toLowerCase().replace(/ /g, '_')}.jpg" class="img-portrait"
-                                        onerror="this.onerror=null; this.src='asset/${name.toLowerCase().replace(/ /g, '_')}.png';">
-                                </div>
-                                <span class="member-name-s3">${name}</span>
-                            </div>
-                        `;
+                    <div class="member-slot">
+                        <div class="relative">
+                            <div class="number-badge">${getOriginalNumber(name)}</div>
+                            <img src="asset/${name.toLowerCase().replace(/ /g, '_')}.jpg"
+                                class="img-portrait"
+                                onerror="this.onerror=null; this.src='asset/${name.toLowerCase().replace(/ /g, '_')}.png';">
+                        </div>
+                        <span class="member-name-s3">${name}</span>
+                    </div>
+                `;
                     });
 
                     container.appendChild(rowDiv);
@@ -599,55 +616,32 @@
                 return;
             }
 
-            /* =======================
-               DESKTOP: PYRAMID STRICT
-            ======================= */
+            // ==========================
+            // DESKTOP MODE (START FROM 2)
+            // ==========================
             let remaining = membersCopy.length;
             let rowSizes = [];
+            let row = 2;
 
-            const relaxRule = remaining > 24;
-
-            let rowsCount = Math.ceil(remaining / 6);
-            if (rowsCount < 2) rowsCount = 2;
-
-            for (let i = 1; i <= rowsCount; i++) {
-                rowSizes.push(i);
-            }
-
-            while (rowSizes.reduce((a, b) => a + b, 0) < remaining) {
-                for (let i = rowSizes.length - 1; i >= 0; i--) {
-                    if (rowSizes.reduce((a, b) => a + b, 0) >= remaining) break;
-                    rowSizes[i]++;
+            while (remaining > 0) {
+                if (remaining <= row) {
+                    rowSizes.push(remaining);
+                    break;
                 }
+
+                rowSizes.push(row);
+                remaining -= row;
+                row++;
             }
 
-            while (rowSizes.reduce((a, b) => a + b, 0) > remaining) {
-                for (let i = 0; i < rowSizes.length; i++) {
-                    if (rowSizes.reduce((a, b) => a + b, 0) <= remaining) break;
-                    if (rowSizes[i] > 1) rowSizes[i]--;
-                }
-            }
+            // merge row terakhir kalau lebih kecil dari sebelumnya
+            if (rowSizes.length >= 2) {
+                const last = rowSizes[rowSizes.length - 1];
+                const prev = rowSizes[rowSizes.length - 2];
 
-            for (let i = 1; i < rowSizes.length; i++) {
-                if (rowSizes[i] < rowSizes[i - 1] && !relaxRule) {
-                    rowSizes[i] = rowSizes[i - 1];
-                }
-            }
-
-            let total = rowSizes.reduce((a, b) => a + b, 0);
-
-            while (total < remaining) {
-                rowSizes[rowSizes.length - 1]++;
-                total++;
-            }
-
-            while (total > remaining) {
-                for (let i = 0; i < rowSizes.length; i++) {
-                    if (total <= remaining) break;
-                    if (rowSizes[i] > 1) {
-                        rowSizes[i]--;
-                        total--;
-                    }
+                if (last < prev) {
+                    rowSizes[rowSizes.length - 2] += last;
+                    rowSizes.pop();
                 }
             }
 
@@ -676,24 +670,27 @@
 
                 const rowMembers = membersCopy.splice(0, size);
 
+                // NORMAL
                 if (layoutMode === "normal") {
                     rowMembers.forEach(name => {
                         rowDiv.innerHTML += `
-                            <div class="member-slot">
-                                <div class="relative">
-                                    <div class="number-badge">${getOriginalNumber(name)}</div>
-                                    <img src="asset/${name.toLowerCase().replace(/ /g, '_')}.jpg" class="img-portrait"
-                                        onerror="this.onerror=null; this.src='asset/${name.toLowerCase().replace(/ /g, '_')}.png';">
-                                </div>
-                                <span class="member-name-s3">${name}</span>
-                            </div>
-                        `;
+                    <div class="member-slot">
+                        <div class="relative">
+                            <div class="number-badge">${getOriginalNumber(name)}</div>
+                            <img src="asset/${name.toLowerCase().replace(/ /g, '_')}.jpg"
+                                class="img-portrait"
+                                onerror="this.onerror=null; this.src='asset/${name.toLowerCase().replace(/ /g, '_')}.png';">
+                        </div>
+                        <span class="member-name-s3">${name}</span>
+                    </div>
+                `;
                     });
 
                     container.appendChild(rowDiv);
                     return;
                 }
 
+                // ZIGZAG
                 let slots = new Array(size).fill(null);
                 const order = zigzagOrder(size);
 
@@ -703,27 +700,21 @@
 
                 slots.forEach(name => {
                     rowDiv.innerHTML += `
-                        <div class="member-slot">
-                            <div class="relative">
-                                <div class="number-badge">${getOriginalNumber(name)}</div>
-                                <img src="asset/${name.toLowerCase().replace(/ /g, '_')}.jpg" class="img-portrait"
-                                    onerror="this.onerror=null; this.src='asset/${name.toLowerCase().replace(/ /g, '_')}.png';">
-                            </div>
-                            <span class="member-name-s3">${name}</span>
-                        </div>
-                    `;
+                <div class="member-slot">
+                    <div class="relative">
+                        <div class="number-badge">${getOriginalNumber(name)}</div>
+                        <img src="asset/${name.toLowerCase().replace(/ /g, '_')}.jpg"
+                            class="img-portrait"
+                            onerror="this.onerror=null; this.src='asset/${name.toLowerCase().replace(/ /g, '_')}.png';">
+                    </div>
+                    <span class="member-name-s3">${name}</span>
+                </div>
+            `;
                 });
 
                 container.appendChild(rowDiv);
             });
         }
-
-        window.addEventListener("resize", () => {
-            if (!document.getElementById("step-3").classList.contains("hidden")) {
-                buildPyramid();
-            }
-        });
-
         function downloadImage() {
             const btn = document.getElementById('btn-download');
             btn.innerText = "GENERATING...";
