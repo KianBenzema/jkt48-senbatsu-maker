@@ -499,8 +499,6 @@
             container.innerHTML = '';
 
             let membersCopy = [...selectedMembers];
-
-            // center selalu urutan #1
             const centerName = membersCopy.shift();
 
             function getOriginalNumber(name) {
@@ -508,7 +506,7 @@
             }
 
             // ==========================
-            // RENDER CENTER (SELALU SENDIRI)
+            // RENDER CENTER (BESAR)
             // ==========================
             if (centerName) {
                 const centerRow = document.createElement('div');
@@ -518,8 +516,7 @@
             <div class="member-slot">
                 <div class="relative">
                     <div class="number-badge">${getOriginalNumber(centerName)}</div>
-                    <img src="asset/${centerName.toLowerCase().replace(/ /g, '_')}.jpg"
-                        class="img-portrait-center"
+                    <img src="asset/${centerName.toLowerCase().replace(/ /g, '_')}.jpg" class="img-portrait-center"
                         onerror="this.onerror=null; this.src='asset/${centerName.toLowerCase().replace(/ /g, '_')}.png';">
                 </div>
                 <span class="member-name-center">${centerName}</span>
@@ -532,7 +529,7 @@
             const isMobile = window.innerWidth <= 640;
 
             // ==========================
-            // MOBILE MODE
+            // MOBILE MODE (MAX 3/4)
             // ==========================
             if (isMobile) {
                 let maxPerRow = 4;
@@ -568,15 +565,13 @@
 
                     const rowMembers = membersCopy.splice(0, maxPerRow);
 
-                    // NORMAL
                     if (layoutMode === "normal") {
                         rowMembers.forEach(name => {
                             rowDiv.innerHTML += `
                         <div class="member-slot">
                             <div class="relative">
                                 <div class="number-badge">${getOriginalNumber(name)}</div>
-                                <img src="asset/${name.toLowerCase().replace(/ /g, '_')}.jpg"
-                                    class="img-portrait"
+                                <img src="asset/${name.toLowerCase().replace(/ /g, '_')}.jpg" class="img-portrait"
                                     onerror="this.onerror=null; this.src='asset/${name.toLowerCase().replace(/ /g, '_')}.png';">
                             </div>
                             <span class="member-name-s3">${name}</span>
@@ -588,7 +583,6 @@
                         continue;
                     }
 
-                    // ZIGZAG
                     let slots = new Array(rowMembers.length).fill(null);
                     const order = zigzagOrder(rowMembers.length);
 
@@ -601,8 +595,7 @@
                     <div class="member-slot">
                         <div class="relative">
                             <div class="number-badge">${getOriginalNumber(name)}</div>
-                            <img src="asset/${name.toLowerCase().replace(/ /g, '_')}.jpg"
-                                class="img-portrait"
+                            <img src="asset/${name.toLowerCase().replace(/ /g, '_')}.jpg" class="img-portrait"
                                 onerror="this.onerror=null; this.src='asset/${name.toLowerCase().replace(/ /g, '_')}.png';">
                         </div>
                         <span class="member-name-s3">${name}</span>
@@ -617,32 +610,68 @@
             }
 
             // ==========================
-            // DESKTOP MODE (START FROM 2)
-            // contoh 12: 1 / 2 / 3 / 6
+            // DESKTOP MODE (MAX 7 PER ROW)
+            // RULE: bawah tidak boleh lebih kecil dari atas
             // ==========================
+            const maxPerRow = 7;
             let remaining = membersCopy.length;
-            let rowSizes = [];
-            let row = 2;
 
+            let rowSizes = [];
+            let nextSize = 2;
+
+            // buat row naik dari 2 sampai max 7
             while (remaining > 0) {
-                if (remaining <= row) {
+                let size = Math.min(nextSize, maxPerRow);
+
+                if (remaining <= size) {
                     rowSizes.push(remaining);
+                    remaining = 0;
                     break;
                 }
 
-                rowSizes.push(row);
-                remaining -= row;
-                row++;
+                rowSizes.push(size);
+                remaining -= size;
+
+                if (nextSize < maxPerRow) nextSize++;
             }
 
-            // merge row terakhir kalau lebih kecil dari sebelumnya
-            if (rowSizes.length >= 2) {
+            // pastikan row terakhir tidak lebih kecil dari sebelumnya
+            // kalau lebih kecil, gabung ke row sebelumnya
+            while (rowSizes.length >= 2) {
                 const last = rowSizes[rowSizes.length - 1];
                 const prev = rowSizes[rowSizes.length - 2];
 
                 if (last < prev) {
                     rowSizes[rowSizes.length - 2] += last;
                     rowSizes.pop();
+
+                    // kalau row sebelumnya jadi lebih dari 7, pecah lagi
+                    if (rowSizes[rowSizes.length - 1] > maxPerRow) {
+                        let overflow = rowSizes[rowSizes.length - 1] - maxPerRow;
+                        rowSizes[rowSizes.length - 1] = maxPerRow;
+                        rowSizes.push(overflow);
+                    }
+                } else {
+                    break;
+                }
+            }
+
+            // jika masih ada row yang >7 (karena overflow), pecah jadi beberapa row max 7
+            let finalRows = [];
+            rowSizes.forEach(sz => {
+                while (sz > maxPerRow) {
+                    finalRows.push(maxPerRow);
+                    sz -= maxPerRow;
+                }
+                if (sz > 0) finalRows.push(sz);
+            });
+
+            // rapihin lagi biar non-decreasing
+            for (let i = 1; i < finalRows.length; i++) {
+                if (finalRows[i] < finalRows[i - 1]) {
+                    finalRows[i] += finalRows[i - 1];
+                    finalRows.splice(i - 1, 1);
+                    i = 0;
                 }
             }
 
@@ -665,21 +694,20 @@
                 return positions;
             }
 
-            rowSizes.forEach(size => {
+            // render desktop
+            finalRows.forEach(size => {
                 const rowDiv = document.createElement('div');
                 rowDiv.className = 'pyramid-row';
 
                 const rowMembers = membersCopy.splice(0, size);
 
-                // NORMAL
                 if (layoutMode === "normal") {
                     rowMembers.forEach(name => {
                         rowDiv.innerHTML += `
                     <div class="member-slot">
                         <div class="relative">
                             <div class="number-badge">${getOriginalNumber(name)}</div>
-                            <img src="asset/${name.toLowerCase().replace(/ /g, '_')}.jpg"
-                                class="img-portrait"
+                            <img src="asset/${name.toLowerCase().replace(/ /g, '_')}.jpg" class="img-portrait"
                                 onerror="this.onerror=null; this.src='asset/${name.toLowerCase().replace(/ /g, '_')}.png';">
                         </div>
                         <span class="member-name-s3">${name}</span>
@@ -691,7 +719,6 @@
                     return;
                 }
 
-                // ZIGZAG
                 let slots = new Array(size).fill(null);
                 const order = zigzagOrder(size);
 
@@ -704,8 +731,7 @@
                 <div class="member-slot">
                     <div class="relative">
                         <div class="number-badge">${getOriginalNumber(name)}</div>
-                        <img src="asset/${name.toLowerCase().replace(/ /g, '_')}.jpg"
-                            class="img-portrait"
+                        <img src="asset/${name.toLowerCase().replace(/ /g, '_')}.jpg" class="img-portrait"
                             onerror="this.onerror=null; this.src='asset/${name.toLowerCase().replace(/ /g, '_')}.png';">
                     </div>
                     <span class="member-name-s3">${name}</span>
