@@ -494,6 +494,7 @@
             buildPyramid();
         }
 
+
         function buildPyramid() {
             const container = document.getElementById('pyramid-container');
             container.innerHTML = '';
@@ -505,52 +506,56 @@
                 return selectedMembers.indexOf(name) + 1;
             }
 
-            function zigzagOrder(size) {
-                let positions = [];
-                let left = 0;
-                let right = size - 1;
-
-                while (positions.length < size) {
-                    if (left <= right) positions.push(left++);
-                    if (positions.length < size && right >= left) positions.push(right--);
-                }
-
-                return positions;
-            }
-
-            // ==========================
-            // CENTER (BESAR)
-            // ==========================
             if (centerName) {
                 const centerRow = document.createElement('div');
                 centerRow.className = 'pyramid-row';
 
                 centerRow.innerHTML = `
-            <div class="member-slot">
-                <div class="relative">
-                    <div class="number-badge">${getOriginalNumber(centerName)}</div>
-                    <img src="asset/${centerName.toLowerCase().replace(/ /g, '_')}.jpg" class="img-portrait-center"
-                        onerror="this.onerror=null; this.src='asset/${centerName.toLowerCase().replace(/ /g, '_')}.png';">
-                </div>
-                <span class="member-name-center">${centerName}</span>
-            </div>
-        `;
+                    <div class="member-slot">
+                        <div class="relative">
+                            <div class="number-badge">${getOriginalNumber(centerName)}</div>
+                            <img src="asset/${centerName.toLowerCase().replace(/ /g, '_')}.jpg" class="img-portrait-center"
+                                onerror="this.onerror=null; this.src='asset/${centerName.toLowerCase().replace(/ /g, '_')}.png';">
+                        </div>
+                        <span class="member-name-center">${centerName}</span>
+                    </div>
+                `;
 
                 container.appendChild(centerRow);
             }
 
             const isMobile = window.innerWidth <= 640;
 
-            // ==========================
-            // MOBILE MODE (MAX 3/4)
-            // ==========================
+            /* =======================
+               MOBILE: MAX ROW CONTROL
+            ======================= */
             if (isMobile) {
+
                 let maxPerRow = 4;
 
                 if (window.innerWidth <= 375) {
                     maxPerRow = 3;
                 } else if (window.innerWidth <= 425) {
                     maxPerRow = 4;
+                }
+
+                function zigzagOrderMobile(size) {
+                    let positions = [];
+                    let left = 0;
+                    let right = size - 1;
+
+                    while (positions.length < size) {
+                        if (left <= right) {
+                            positions.push(left);
+                            left++;
+                        }
+                        if (positions.length < size && right >= left) {
+                            positions.push(right);
+                            right--;
+                        }
+                    }
+
+                    return positions;
                 }
 
                 while (membersCopy.length > 0) {
@@ -562,15 +567,15 @@
                     if (layoutMode === "normal") {
                         rowMembers.forEach(name => {
                             rowDiv.innerHTML += `
-                        <div class="member-slot">
-                            <div class="relative">
-                                <div class="number-badge">${getOriginalNumber(name)}</div>
-                                <img src="asset/${name.toLowerCase().replace(/ /g, '_')}.jpg" class="img-portrait"
-                                    onerror="this.onerror=null; this.src='asset/${name.toLowerCase().replace(/ /g, '_')}.png';">
-                            </div>
-                            <span class="member-name-s3">${name}</span>
-                        </div>
-                    `;
+                                <div class="member-slot">
+                                    <div class="relative">
+                                        <div class="number-badge">${getOriginalNumber(name)}</div>
+                                        <img src="asset/${name.toLowerCase().replace(/ /g, '_')}.jpg" class="img-portrait"
+                                            onerror="this.onerror=null; this.src='asset/${name.toLowerCase().replace(/ /g, '_')}.png';">
+                                    </div>
+                                    <span class="member-name-s3">${name}</span>
+                                </div>
+                            `;
                         });
 
                         container.appendChild(rowDiv);
@@ -578,7 +583,7 @@
                     }
 
                     let slots = new Array(rowMembers.length).fill(null);
-                    const order = zigzagOrder(rowMembers.length);
+                    const order = zigzagOrderMobile(rowMembers.length);
 
                     rowMembers.forEach((name, idx) => {
                         slots[order[idx]] = name;
@@ -586,15 +591,15 @@
 
                     slots.forEach(name => {
                         rowDiv.innerHTML += `
-                    <div class="member-slot">
-                        <div class="relative">
-                            <div class="number-badge">${getOriginalNumber(name)}</div>
-                            <img src="asset/${name.toLowerCase().replace(/ /g, '_')}.jpg" class="img-portrait"
-                                onerror="this.onerror=null; this.src='asset/${name.toLowerCase().replace(/ /g, '_')}.png';">
-                        </div>
-                        <span class="member-name-s3">${name}</span>
-                    </div>
-                `;
+                            <div class="member-slot">
+                                <div class="relative">
+                                    <div class="number-badge">${getOriginalNumber(name)}</div>
+                                    <img src="asset/${name.toLowerCase().replace(/ /g, '_')}.jpg" class="img-portrait"
+                                        onerror="this.onerror=null; this.src='asset/${name.toLowerCase().replace(/ /g, '_')}.png';">
+                                </div>
+                                <span class="member-name-s3">${name}</span>
+                            </div>
+                        `;
                     });
 
                     container.appendChild(rowDiv);
@@ -603,52 +608,78 @@
                 return;
             }
 
-            // ==========================
-            // DESKTOP MODE (CUSTOM SYSTEM)
-            // 12 => 1/2/4/5
-            // 24 => 1/2/3/5/6/7
-            // MAX 7 PER ROW
-            // ==========================
-            const maxPerRow = 7;
-            const totalSenbatsu = selectedMembers.length;
+            /* =======================
+               DESKTOP: PYRAMID STRICT
+            ======================= */
             let remaining = membersCopy.length;
+            let rowSizes = [];
 
-            let rows = [];
+            const relaxRule = remaining > 24;
 
-            if (totalSenbatsu === 12) {
-                rows = [2, 4, 5];
-            } else if (totalSenbatsu === 24) {
-                rows = [2, 3, 5, 6, 7];
-            } else {
-                // AUTO UNTUK 25+
-                rows = [2, 3, 4, 5, 6, 7];
-                let sum = rows.reduce((a, b) => a + b, 0);
+            let rowsCount = Math.ceil(remaining / 6);
+            if (rowsCount < 2) rowsCount = 2;
 
-                while (sum < remaining) {
-                    rows.push(7);
-                    sum += 7;
-                }
-
-                while (sum > remaining) {
-                    for (let i = 0; i < rows.length && sum > remaining; i++) {
-                        if (rows[i] > 2) {
-                            rows[i]--;
-                            sum--;
-                        }
-                    }
-                }
-
-                for (let i = 1; i < rows.length; i++) {
-                    if (rows[i] < rows[i - 1]) {
-                        rows[i] = rows[i - 1];
-                    }
-                }
-
-                rows = rows.map(x => Math.min(x, maxPerRow));
+            for (let i = 1; i <= rowsCount; i++) {
+                rowSizes.push(i);
             }
 
-            // render desktop rows
-            rows.forEach(size => {
+            while (rowSizes.reduce((a, b) => a + b, 0) < remaining) {
+                for (let i = rowSizes.length - 1; i >= 0; i--) {
+                    if (rowSizes.reduce((a, b) => a + b, 0) >= remaining) break;
+                    rowSizes[i]++;
+                }
+            }
+
+            while (rowSizes.reduce((a, b) => a + b, 0) > remaining) {
+                for (let i = 0; i < rowSizes.length; i++) {
+                    if (rowSizes.reduce((a, b) => a + b, 0) <= remaining) break;
+                    if (rowSizes[i] > 1) rowSizes[i]--;
+                }
+            }
+
+            for (let i = 1; i < rowSizes.length; i++) {
+                if (rowSizes[i] < rowSizes[i - 1] && !relaxRule) {
+                    rowSizes[i] = rowSizes[i - 1];
+                }
+            }
+
+            let total = rowSizes.reduce((a, b) => a + b, 0);
+
+            while (total < remaining) {
+                rowSizes[rowSizes.length - 1]++;
+                total++;
+            }
+
+            while (total > remaining) {
+                for (let i = 0; i < rowSizes.length; i++) {
+                    if (total <= remaining) break;
+                    if (rowSizes[i] > 1) {
+                        rowSizes[i]--;
+                        total--;
+                    }
+                }
+            }
+
+            function zigzagOrder(size) {
+                let positions = [];
+                let left = 0;
+                let right = size - 1;
+
+                while (positions.length < size) {
+                    if (left <= right) {
+                        positions.push(left);
+                        left++;
+                    }
+                    if (positions.length < size && right >= left) {
+                        positions.push(right);
+                        right--;
+                    }
+                }
+
+                return positions;
+            }
+
+            rowSizes.forEach(size => {
                 const rowDiv = document.createElement('div');
                 rowDiv.className = 'pyramid-row';
 
@@ -657,15 +688,15 @@
                 if (layoutMode === "normal") {
                     rowMembers.forEach(name => {
                         rowDiv.innerHTML += `
-                    <div class="member-slot">
-                        <div class="relative">
-                            <div class="number-badge">${getOriginalNumber(name)}</div>
-                            <img src="asset/${name.toLowerCase().replace(/ /g, '_')}.jpg" class="img-portrait"
-                                onerror="this.onerror=null; this.src='asset/${name.toLowerCase().replace(/ /g, '_')}.png';">
-                        </div>
-                        <span class="member-name-s3">${name}</span>
-                    </div>
-                `;
+                            <div class="member-slot">
+                                <div class="relative">
+                                    <div class="number-badge">${getOriginalNumber(name)}</div>
+                                    <img src="asset/${name.toLowerCase().replace(/ /g, '_')}.jpg" class="img-portrait"
+                                        onerror="this.onerror=null; this.src='asset/${name.toLowerCase().replace(/ /g, '_')}.png';">
+                                </div>
+                                <span class="member-name-s3">${name}</span>
+                            </div>
+                        `;
                     });
 
                     container.appendChild(rowDiv);
@@ -681,20 +712,26 @@
 
                 slots.forEach(name => {
                     rowDiv.innerHTML += `
-                <div class="member-slot">
-                    <div class="relative">
-                        <div class="number-badge">${getOriginalNumber(name)}</div>
-                        <img src="asset/${name.toLowerCase().replace(/ /g, '_')}.jpg" class="img-portrait"
-                            onerror="this.onerror=null; this.src='asset/${name.toLowerCase().replace(/ /g, '_')}.png';">
-                    </div>
-                    <span class="member-name-s3">${name}</span>
-                </div>
-            `;
+                        <div class="member-slot">
+                            <div class="relative">
+                                <div class="number-badge">${getOriginalNumber(name)}</div>
+                                <img src="asset/${name.toLowerCase().replace(/ /g, '_')}.jpg" class="img-portrait"
+                                    onerror="this.onerror=null; this.src='asset/${name.toLowerCase().replace(/ /g, '_')}.png';">
+                            </div>
+                            <span class="member-name-s3">${name}</span>
+                        </div>
+                    `;
                 });
 
                 container.appendChild(rowDiv);
             });
         }
+
+        window.addEventListener("resize", () => {
+            if (!document.getElementById("step-3").classList.contains("hidden")) {
+                buildPyramid();
+            }
+        });
         function downloadImage() {
             const btn = document.getElementById('btn-download');
             btn.innerText = "GENERATING...";
